@@ -1,0 +1,36 @@
+/**
+ * Sample React Native App
+ * https://github.com/facebook/react-native
+ *
+ * @format
+ * @flow strict-local
+ */
+
+import React from 'react';
+import {
+  SafeAreaView,
+  StyleSheet,
+  ScrollView,
+  View,
+  Text,
+  StatusBar,
+} from 'react-native';
+
+import Routes from './src/routes'
+
+import Tabela from './src/table'
+
+const App = () => {
+  return (
+    <>
+    <Routes></Routes>
+    <StatusBar style="light" backgroundColor="#363636" />
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+ 
+});
+
+export default App;
