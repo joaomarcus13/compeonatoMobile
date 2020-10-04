@@ -1,23 +1,22 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Alert,
-  FlatList,
   SafeAreaView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  TouchableHighlight,
   ActivityIndicator,
   RefreshControl,
-  Modal
+  Modal,
+  Image
 } from "react-native";
 import api from './services/api'
 import { ScrollView } from "react-native-gesture-handler";
 import { Picker } from '@react-native-community/picker';
 import AsyncStorage from '@react-native-community/async-storage';
+import logos from './services/table.json'
 import Icon from 'react-native-vector-icons/FontAwesome'
+import { block } from "react-native-reanimated";
 Icon.loadFont();
 
 const Item = ({ item, posicao, style }) => (
@@ -34,25 +33,29 @@ const Item = ({ item, posicao, style }) => (
 
 const Header = ({ selectedValue, handleSelectedValue, handleRefresh }) => (
   <>
-    <View style={styles.header}>
-      <Picker
+    <View style={styles.header}> 
+    
+    <Image style={styles.logo} source={{uri:`https://icons.futebol.com/competition/m/normal/${logos[selectedValue]}.png`}}></Image>
+
+       <Picker
         selectedValue={selectedValue}
         style={styles.picker}
         onValueChange={(itemValue, itemIndex) => handleSelectedValue(itemValue)}
         mode='dialog'
+        
       >
-        <Picker.Item label="Campeonato Brasileiro" value="brasileiro" />
-        <Picker.Item label="Campeonato Espanhol" value="espanhol" />
-        <Picker.Item label="Campeonato Inglês" value="ingles" />
-        <Picker.Item label="Campeonato Italiano" value="italiano" />
-        <Picker.Item label="Campeonato Alemão" value="alemao" />
-        <Picker.Item label="Campeonato Francês" value="frances" />
-        <Picker.Item label="Campeonato Português" value="portugues" />
+        <Picker.Item label="Brasileirão" value="brasileiro" />
+        <Picker.Item label="La Liga" value="espanhol" />
+        <Picker.Item label="Premier League" value="ingles" />
+        <Picker.Item label="Serie A" value="italiano" />
+        <Picker.Item label="Bundesliga" value="alemao" />
+        <Picker.Item label="Ligue 1" value="frances" />
+        <Picker.Item label="Primeira Liga" value="portugues" />
 
-      </Picker>
-      <TouchableOpacity style={styles.icon} onPress={() => { handleRefresh() }}>
-        <Icon name="refresh" size={18} color="#FFF" />
-      </TouchableOpacity>
+      </Picker> 
+
+     
+      
     </View>
 
     <View style={styles.header2}>
@@ -62,7 +65,7 @@ const Header = ({ selectedValue, handleSelectedValue, handleRefresh }) => (
       <Text style={[styles.title, styles.stats]}>D</Text>
       <Text style={[styles.title, styles.stats]}>E</Text>
       <Text style={[styles.title, styles.stats2]}>Gols</Text>
-      <Text style={[styles.title, styles.stats, { color: 'white' }]}>P</Text>
+      <Text style={[styles.title, styles.stats, { color: 'white',marginRight:1 }]}>P </Text>
     </View>
   </>
 )
@@ -80,9 +83,7 @@ const App = ({ navigation }) => {
     setRefreshing(true);    
     handleRefresh(selectedValue)
     setRefreshing(false)
-    
   };
-
 
   const handleRefresh = () => {
     setSpinner(true)
@@ -108,7 +109,6 @@ const App = ({ navigation }) => {
     setError(false)
     const arr = []
     try {
-
       const data = await api.get(`tabela/${nomeCampeonato}?refresh=${refresh}`)
       for (let i = 1; i <= 20; i++) {
         arr.push(data.data[i])
@@ -121,15 +121,12 @@ const App = ({ navigation }) => {
       handlePopup()
       console.log(error)
     }
-
   }
 
   const handlePopup = () => {
     setPopup(true)
     setTimeout(() => { setPopup(false) }, 3000)
-
   }
-
 
   const getStorage = async (nomeCampeonato) => {
     setError(false)
@@ -244,27 +241,44 @@ const styles = StyleSheet.create({
 
   header: {
     backgroundColor: "#1C1C1C",
-    height: 60,
+    height: 70,
     flexDirection: 'row',
     justifyContent: 'space-evenly',
-    alignItems: 'center'
+    alignItems: 'center',
+    
   },
   header2: {
     flexDirection: 'row',
     backgroundColor: "#1C1C1C",
     height: 40,
     justifyContent: 'flex-end',
+    paddingTop:5
 
   },
   picker: {
+   backgroundColor:'#1C1C1C',
     color: 'white',
-    width: '80%',
-    height: 90,
+    width: 176,
+    /* backgroundColor:'#A9A9A9',  */
+
+  
+    transform: [
+      { scaleX: 1.3 }, 
+      { scaleY: 1.3 },
+   ],
   },
 
-  pickerItem: {
-    fontSize: 18,
+  logo: {
+    width: 42,
+    height: 42,
+    backgroundColor:'#fff',
+    borderRadius:5,
+  
+   
+   
   },
+
+ 
   scroll: {
     backgroundColor: '#1C1C1C'
   },
@@ -312,22 +326,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  openButton: {
-    backgroundColor: "#F194FF",
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2
-  },
-  textStyle: {
-    color: "white",
-    fontWeight: "bold",
-
-  },
+ 
   modalText: {
-
-
     color: 'white',
-
   }
 });
 

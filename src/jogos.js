@@ -6,19 +6,18 @@
  * @flow strict-local
  */
 
-import React, { useState, useEffect ,useCallback} from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   SafeAreaView,
   StyleSheet,
   ScrollView,
   View,
   Text,
-  StatusBar,
   Image,
-  TouchableOpacity,
   TouchableHighlight,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Modal
 } from 'react-native';
 import api from './services/api'
 
@@ -52,7 +51,7 @@ const App = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [btnL, setbtnL] = useState(false);
   const [btnR, setbtnR] = useState(false);
-
+  const [popup, setPopup] = useState(false);
 
   const setStorage = async (arr) => {
     try {
@@ -85,7 +84,12 @@ const App = ({ navigation }) => {
 
   }
 
-  const getRodada=()=>{
+  const handlePopup = () => {
+    setPopup(true)
+    setTimeout(() => { setPopup(false) }, 3000)
+  }
+
+  const getRodada = () => {
     let sub = String(rodada).substr(0, 2)
     if (sub.substring(1) === 'ª')
       sub = sub.substr(0, 1)
@@ -96,58 +100,52 @@ const App = ({ navigation }) => {
   const arrowLeft = () => {
     let r = getRodada()
     setSpinner(true)
-    loadData(Number(r)-1)
+    loadData(Number(r) - 1)
   }
-
 
   const arrowRight = () => {
     let r = getRodada()
     setSpinner(true)
-    loadData(Number(r)+1)
+    loadData(Number(r) + 1)
   }
-
-
 
   const wait = (timeout) => {
     return new Promise(resolve => {
       setTimeout(resolve, timeout);
     });
   }
-  
 
-
-  const onRefresh = useCallback(() => {
+  const onRefresh = () => {
     setRefreshing(true);
+    setSpinner(true)
+    loadData(getRodada(), 'true')
+    setRefreshing(false)
+  }
 
-    wait(1000).then(() => {
-      setSpinner(true)
-      loadData(getRodada(),'true')
-      setRefreshing(false)
-    });
-  }, [refreshing]);
+  const loadData = async (n_rodada = null, refresh = 'false') => {
+    let url = n_rodada ?
+      `jogos/${selectedValue}?n_rodada=${n_rodada}&refresh=${refresh}` :
+      `jogos/${selectedValue}?refresh=${refresh}`
 
-  const loadData = async (n_rodada = null,refresh='false') => {
-    let url = n_rodada ? 
-    `jogos/${selectedValue}?n_rodada=${n_rodada}&refresh=${refresh}` : 
-    `jogos/${selectedValue}?refresh=${refresh}`
-
-    n_rodada<=1?setbtnL(true) : setbtnL(false)
-    n_rodada>=38?setbtnR(true) : setbtnR(false)
-    
+    if (n_rodada) {
+      n_rodada <= 1 ? setbtnL(true) : setbtnL(false)
+      n_rodada >= 38 ? setbtnR(true) : setbtnR(false)
+    }
     console.log(url)
     try {
       console.log('load')
       const data = await api.get(url)
-    
+
       setRodada(Object.keys(data.data))
       setJogos(Object.values(data.data)[0])
       setSpinner(false)
       setStorage(data.data)
     } catch (error) {
-      console.log('erro api ',error)
+      console.log('erro api ', error)
+      handlePopup()
       getStorage()
     }
-    
+
   }
 
   useEffect(() => {
@@ -155,14 +153,14 @@ const App = ({ navigation }) => {
     NetInfo.fetch().then(state => {
       state.isConnected ? loadData() : getStorage()
     });
-return
+    return
   }, [])
 
 
   if (spinner) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header arrowLeft={arrowLeft} arrowRight={arrowRight} rodada={rodada} btn={[btnL,btnR]}></Header>
+        <Header arrowLeft={arrowLeft} arrowRight={arrowRight} rodada={rodada} btn={[btnL, btnR]}></Header>
         <View style={styles.horizontal}>
           <ActivityIndicator size='large' color="#fff"></ActivityIndicator>
         </View>
@@ -172,30 +170,46 @@ return
 
     return (
       <SafeAreaView style={styles.container}>
-        <Header arrowLeft={arrowLeft} arrowRight={arrowRight} rodada={rodada} btn={[btnL,btnR]}></Header>
-        <ScrollView 
-            style={styles.scroll}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh}></RefreshControl>
-            }>
+        <Header arrowLeft={arrowLeft} arrowRight={arrowRight} rodada={rodada} btn={[btnL, btnR]}></Header>
+
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={popup}
+        >
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <Text style={styles.modalText}>Erro ao atualizar</Text>
+
+            </View>
+          </View>
+        </Modal>
+
+
+        <ScrollView
+          style={styles.scroll}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh}></RefreshControl>
+          }>
 
           {
-            jogos!=[]?
-            jogos.map(jogo => {
-              return (
-                <View key={jogo.mandante} style={styles.item} >
-                  <Text style={styles.desc}>{jogo.data} {jogo.local} {jogo.horario}</Text>
-                  <View style={styles.placar}>
-                    <Text style={styles.text}>{jogo.mandante} </Text>
-                    <Image style={styles.logo} source={{ uri: `https://json.gazetaesportiva.com/footstats/logos/88x88/${logos[jogo.mandante]}.png` }}></Image>
-                    <Text style={styles.text}>  {jogo.golMandante}  x  {jogo.golVisitante}  </Text>
-                    <Image style={styles.logo} source={{ uri: `https://json.gazetaesportiva.com/footstats/logos/88x88/${logos[jogo.visitante]}.png` }}></Image>
-                    <Text style={styles.text}> {jogo.visitante}</Text>
+            jogos != [] ?
+              jogos.map(jogo => {
+                return (
+                  <View key={jogo.mandante} style={styles.item} >
+                    <Text style={styles.desc}>{jogo.data} {jogo.local} {jogo.horario}</Text>
+                    <View style={styles.placar}>
+                      <Text style={styles.text}>{jogo.mandante} </Text>
+                      <Image style={styles.logo} source={{ uri: `https://json.gazetaesportiva.com/footstats/logos/88x88/${logos[jogo.mandante]}.png` }}></Image>
+                      <Text style={styles.text}>  {jogo.golMandante}  x  {jogo.golVisitante}  </Text>
+                      <Image style={styles.logo} source={{ uri: `https://json.gazetaesportiva.com/footstats/logos/88x88/${logos[jogo.visitante]}.png` }}></Image>
+                      <Text style={styles.text}> {jogo.visitante}</Text>
+                    </View>
                   </View>
-                </View>
-              )
-            })
-            : <Text>Dados Nao disponiveis</Text>
+                )
+              })
+              : <Text>Dados Não disponiveis</Text>
           }
         </ScrollView>
       </SafeAreaView>
@@ -265,6 +279,39 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     padding: 10,
     backgroundColor: '#2c2c2c'
+  },
+
+
+  centeredView: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
+
+
+  },
+
+
+  modalView: {
+    margin: 0,
+    backgroundColor: "#191919",
+    borderRadius: 15,
+    padding: 15,
+
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  modalText: {
+    color: 'white',
   }
 });
 
