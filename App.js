@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -20,17 +20,25 @@ import Routes from './src/routes'
 
 import Tabela from './src/table'
 
+import {NameProvider} from './src/context'
+
 const App = () => {
+
+
+  //const [name,setName] = useState('brasileiro')
+
   return (
     <>
-    <Routes></Routes>
-    <StatusBar style="light" backgroundColor="#363636" />
+      <NameProvider>
+        <Routes></Routes>
+      </NameProvider>
+      <StatusBar style="light" backgroundColor="#363636" />
     </>
   );
 };
 
 const styles = StyleSheet.create({
- 
+
 });
 
 export default App;

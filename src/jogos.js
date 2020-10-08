@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   SafeAreaView,
   StyleSheet,
@@ -17,10 +17,11 @@ import {
   TouchableHighlight,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
   Modal
 } from 'react-native';
 import api from './services/api'
-
+import Context from './context'
 import logos from './services/table.json'
 import AsyncStorage from '@react-native-community/async-storage';
 import NetInfo from '@react-native-community/netinfo';
@@ -44,7 +45,7 @@ const Header = ({ arrowLeft, arrowRight, rodada, btn }) => (
 
 const App = ({ navigation }) => {
 
-  const [selectedValue, setSelectedValue] = useState("brasileiro");
+  //const [selectedValue, setSelectedValue] = useState("brasileiro");
   const [spinner, setSpinner] = useState(true);
   const [rodada, setRodada] = useState("");
   const [jogos, setJogos] = useState([])
@@ -52,11 +53,12 @@ const App = ({ navigation }) => {
   const [btnL, setbtnL] = useState(false);
   const [btnR, setbtnR] = useState(false);
   const [popup, setPopup] = useState(false);
+  const [name,setName] = useContext(Context)
 
   const setStorage = async (arr) => {
     try {
       await AsyncStorage.setItem(
-        `JOGOS-${selectedValue}`,
+        `JOGOS-${name}`,
         JSON.stringify(arr)
       );
     } catch (error) {
@@ -67,7 +69,7 @@ const App = ({ navigation }) => {
 
   const getStorage = async () => {
 
-    const value = await AsyncStorage.getItem(`JOGOS-${selectedValue}`);
+    const value = await AsyncStorage.getItem(`JOGOS-${name}`);
     //const r = await AsyncStorage.getItem('rodada')
     //console.log(value);
     if (value) {
@@ -78,7 +80,8 @@ const App = ({ navigation }) => {
       setSpinner(false)
 
     } else {
-      // loadData()
+      handlePopup()
+      setSpinner(false)
       console.log('erro recuperar getitem')
     }
 
@@ -124,8 +127,8 @@ const App = ({ navigation }) => {
 
   const loadData = async (n_rodada = null, refresh = 'false') => {
     let url = n_rodada ?
-      `jogos/${selectedValue}?n_rodada=${n_rodada}&refresh=${refresh}` :
-      `jogos/${selectedValue}?refresh=${refresh}`
+      `jogos/${name}?n_rodada=${n_rodada}&refresh=${refresh}` :
+      `jogos/${name}?refresh=${refresh}`
 
     if (n_rodada) {
       n_rodada <= 1 ? setbtnL(true) : setbtnL(false)
@@ -149,12 +152,14 @@ const App = ({ navigation }) => {
   }
 
   useEffect(() => {
-    console.log('use effect')
-    NetInfo.fetch().then(state => {
-      state.isConnected ? loadData() : getStorage()
-    });
-    return
-  }, [])
+    console.log('use effect',name)
+    setSpinner(true)
+    //NetInfo.fetch().then(state => {
+      //state.isConnected ? loadData() : 
+      getStorage()
+    //});
+  
+  }, [name])
 
 
   if (spinner) {
@@ -197,7 +202,9 @@ const App = ({ navigation }) => {
             jogos != [] ?
               jogos.map(jogo => {
                 return (
+                  
                   <View key={jogo.mandante} style={styles.item} >
+                    
                     <Text style={styles.desc}>{jogo.data} {jogo.local} {jogo.horario}</Text>
                     <View style={styles.placar}>
                       <Text style={styles.text}>{jogo.mandante} </Text>
@@ -206,7 +213,14 @@ const App = ({ navigation }) => {
                       <Image style={styles.logo} source={{ uri: `https://json.gazetaesportiva.com/footstats/logos/88x88/${logos[jogo.visitante]}.png` }}></Image>
                       <Text style={styles.text}> {jogo.visitante}</Text>
                     </View>
+                    {jogo.vejacomofoi?
+                    <TouchableOpacity style={styles.viewcomofoi} onPress={()=>{navigation.navigate('details',{item:jogo.vejacomofoi})}}> 
+                      <Text style={styles.textcomofoi}>VEJA COMO FOI</Text>
+                      </TouchableOpacity>:
+                    <Text></Text>}
+
                   </View>
+                  
                 )
               })
               : <Text>Dados Não disponiveis</Text>
@@ -239,16 +253,18 @@ const styles = StyleSheet.create({
   item: {
 
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#2c2c2c',
-    marginVertical: 1
+    marginVertical: 1,
+    paddingBottom:10
   },
   placar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    marginHorizontal: 20
+    marginHorizontal: 20,
+    paddingBottom:10
   },
   text: {
     fontSize: 20,
@@ -312,6 +328,17 @@ const styles = StyleSheet.create({
 
   modalText: {
     color: 'white',
+  },
+
+  textcomofoi:{
+    color:"rgb(6, 170, 72)",
+    fontSize:12,
+    
+   
+  },
+
+  viewcomofoi:{
+    
   }
 });
 

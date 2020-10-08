@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   SafeAreaView,
@@ -10,13 +10,13 @@ import {
   Modal,
   Image
 } from "react-native";
+import Context from './context'
 import api from './services/api'
 import { ScrollView } from "react-native-gesture-handler";
 import { Picker } from '@react-native-community/picker';
 import AsyncStorage from '@react-native-community/async-storage';
 import logos from './services/table.json'
 import Icon from 'react-native-vector-icons/FontAwesome'
-import { block } from "react-native-reanimated";
 Icon.loadFont();
 
 const Item = ({ item, posicao, style }) => (
@@ -73,31 +73,35 @@ const Header = ({ selectedValue, handleSelectedValue, handleRefresh }) => (
 const App = ({ navigation }) => {
   const [spinner, setSpinner] = useState(true);
   const [tabela, setTabela] = useState([])
-  const [selectedValue, setSelectedValue] = useState("brasileiro");
+  //const [selectedValue, setSelectedValue] = useState("brasileiro");
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
   const [popup, setPopup] = useState(false);
+  const [name,setName] = useContext(Context);
+
+ 
 
 
   const onRefresh = () => {
     setRefreshing(true);    
-    handleRefresh(selectedValue)
+    handleRefresh(name)
     setRefreshing(false)
   };
 
   const handleRefresh = () => {
     setSpinner(true)
-    loadData('true', selectedValue)
+    loadData('true', name)
   }
 
   const handleSelectedValue = (itemValue) => {
-    setSelectedValue(itemValue)
+    setName(itemValue)
+    //setSelectedValue(itemValue)
   }
 
   const setStorage = async (arr) => {
     try {
       await AsyncStorage.setItem(
-        `TABELA-${selectedValue}`,
+        `TABELA-${name}`,
         JSON.stringify(arr)
       );
     } catch (error) {
@@ -110,7 +114,9 @@ const App = ({ navigation }) => {
     const arr = []
     try {
       const data = await api.get(`tabela/${nomeCampeonato}?refresh=${refresh}`)
+
       for (let i = 1; i <= 20; i++) {
+        if(!data.data[i]) break
         arr.push(data.data[i])
       }
       setSpinner(false)
@@ -125,7 +131,7 @@ const App = ({ navigation }) => {
 
   const handlePopup = () => {
     setPopup(true)
-    setTimeout(() => { setPopup(false) }, 3000)
+    setTimeout(() => { setPopup(false) }, 2500)
   }
 
   const getStorage = async (nomeCampeonato) => {
@@ -151,15 +157,15 @@ const App = ({ navigation }) => {
 
   useEffect(() => {
 
-    getStorage(selectedValue)
-
-  }, [selectedValue])
+    getStorage(name)
+    
+  }, [name])
 
 
   if (spinner) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header selectedValue={selectedValue}
+        <Header selectedValue={name}
           handleSelectedValue={handleSelectedValue}
           handleRefresh={handleRefresh}>
         </Header>
@@ -170,9 +176,10 @@ const App = ({ navigation }) => {
     )
   } else {
     return (
+      
       <SafeAreaView style={styles.container}>
 
-        <Header selectedValue={selectedValue}
+        <Header selectedValue={name}
           handleSelectedValue={handleSelectedValue}
           handleRefresh={handleRefresh}>
         </Header>
@@ -205,6 +212,7 @@ const App = ({ navigation }) => {
 
         </ScrollView>
       </SafeAreaView>
+    
     );
   };
 }
